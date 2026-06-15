@@ -1,0 +1,3 @@
+@echo off
+echo Starting Traffic Safety Mobile Application on Web Server...
+flutter run -d web-server --web-port 5555

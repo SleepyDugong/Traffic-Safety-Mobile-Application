@@ -34,8 +34,8 @@ dependencies:
   cupertino_icons: ^1.0.8
   camera: ^0.10.5
   flutter_tts: ^3.8.5
-  vibration: ^1.8.4
-  tflite_flutter: ^0.10.4
+  vibration: ^3.1.8
+  tflite_flutter: ^0.12.1
   provider: ^6.1.1
   permission_handler: ^11.1.0
   video_player: ^2.8.2
@@ -51,4 +51,5 @@ flutter:
   assets:
     - assets/images/
     - assets/mock_traffic/
+    - assets/camera_config.json
 

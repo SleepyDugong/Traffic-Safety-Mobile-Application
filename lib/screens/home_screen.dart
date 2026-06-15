@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../services/detection_service.dart';
 import '../widgets/glass_card.dart';
@@ -10,8 +11,26 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final detectionService = Provider.of<DetectionService>(context);
     
-    return Scaffold(
-      body: Stack(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        try {
+          const MethodChannel('com.trafficsafety.app/background')
+              .invokeMethod('sendToBackground');
+        } catch (e) {
+          debugPrint("Failed to send to background: $e");
+        }
+      },
+      child: Scaffold(
+        body: GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onTap: () {
+            if (detectionService.runMode == AppRunMode.LIVE_CAMERA) {
+              Navigator.pushNamed(context, '/camera');
+            }
+          },
+          child: Stack(
         children: [
           // Premium Glowing Space Background
           Container(
@@ -153,18 +172,20 @@ class HomeScreen extends StatelessWidget {
                     // Navigation Buttons Row
                     Row(
                       children: [
-                        Expanded(
-                          child: _buildNavButton(
-                            context: context,
-                            label: "LAUNCH HUD",
-                            icon: Icons.play_arrow_rounded,
-                            color: const Color(0xFF10B981),
-                            onTap: () {
-                              Navigator.pushNamed(context, '/camera');
-                            },
+                        if (detectionService.runMode != AppRunMode.LIVE_CAMERA) ...[
+                          Expanded(
+                            child: _buildNavButton(
+                              context: context,
+                              label: "LAUNCH HUD",
+                              icon: Icons.play_arrow_rounded,
+                              color: const Color(0xFF10B981),
+                              onTap: () {
+                                Navigator.pushNamed(context, '/camera');
+                              },
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 16.0),
+                          const SizedBox(width: 16.0),
+                        ],
                         Expanded(
                           child: _buildNavButton(
                             context: context,
@@ -178,6 +199,29 @@ class HomeScreen extends StatelessWidget {
                         ),
                       ],
                     ),
+                    if (detectionService.runMode == AppRunMode.LIVE_CAMERA) ...[
+                      const SizedBox(height: 16.0),
+                      GlassCard(
+                        borderRadius: 16.0,
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: const [
+                            Icon(Icons.touch_app_rounded, color: Colors.cyanAccent, size: 20.0),
+                            SizedBox(width: 8.0),
+                            Text(
+                              "TAP ANYWHERE TO LAUNCH HUD",
+                              style: TextStyle(
+                                color: Colors.cyanAccent,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13.0,
+                                letterSpacing: 1.0,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 16.0),
                     
                     // Settings Floating Button
@@ -198,8 +242,10 @@ class HomeScreen extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
+    ),
+   ),
+  );
+ }
 
   Widget _buildModeCard({
     required BuildContext context,

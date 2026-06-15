@@ -1,6 +1,9 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:provider/provider.dart';
 import 'package:camera/camera.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../services/detection_service.dart';
 import '../services/safety_engine.dart';
 import '../services/alert_service.dart';
@@ -42,8 +45,36 @@ class _CameraScreenState extends State<CameraScreen> {
     }
   }
 
+  Future<bool> _requestCameraPermission() async {
+    final status = await Permission.camera.status;
+    if (!status.isGranted) {
+      final requestStatus = await Permission.camera.request();
+      return requestStatus.isGranted;
+    }
+    return true;
+  }
+
   Future<void> _initializeCamera() async {
     try {
+      // 1. Request camera permission
+      final hasPermission = await _requestCameraPermission();
+      if (!hasPermission) {
+        setState(() {
+          _cameraError = "Camera permission was denied.";
+        });
+        return;
+      }
+
+      // 2. Load camera axis configuration
+      String cameraAxis = "back";
+      try {
+        final configString = await rootBundle.loadString('assets/camera_config.json');
+        final config = jsonDecode(configString);
+        cameraAxis = config['camera_axis'] ?? 'back';
+      } catch (e) {
+        debugPrint("Error loading camera config: $e");
+      }
+
       final cameras = await availableCameras();
       if (cameras.isEmpty) {
         setState(() {
@@ -52,14 +83,17 @@ class _CameraScreenState extends State<CameraScreen> {
         return;
       }
       
-      // Use the rear camera
-      final rearCamera = cameras.firstWhere(
-        (camera) => camera.lensDirection == CameraLensDirection.back,
+      final lensDirection = cameraAxis.toLowerCase() == 'front'
+          ? CameraLensDirection.front
+          : CameraLensDirection.back;
+
+      final selectedCamera = cameras.firstWhere(
+        (camera) => camera.lensDirection == lensDirection,
         orElse: () => cameras.first,
       );
 
       _cameraController = CameraController(
-        rearCamera,
+        selectedCamera,
         ResolutionPreset.medium,
         enableAudio: false,
       );
