@@ -32,6 +32,17 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
+
+    aaptOptions {
+        noCompress("tflite")
+    }
+}
+
+dependencies {
+    implementation("org.tensorflow:tensorflow-lite:2.14.0")
+    implementation("org.tensorflow:tensorflow-lite-gpu:2.14.0")
+    implementation("org.tensorflow:tensorflow-lite-support:0.4.4")
+    implementation("org.opencv:opencv:4.9.0")
 }
 
 kotlin {

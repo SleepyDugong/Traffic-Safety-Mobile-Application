@@ -22,6 +22,7 @@ class _CameraScreenState extends State<CameraScreen> {
   CameraController? _cameraController;
   bool _isCameraInitialized = false;
   String _cameraError = "";
+  bool _isProcessingFrame = false;
 
   @override
   void initState() {
@@ -103,6 +104,7 @@ class _CameraScreenState extends State<CameraScreen> {
         setState(() {
           _isCameraInitialized = true;
         });
+        _startImageStream();
       }
     } catch (e) {
       if (mounted) {
@@ -111,6 +113,40 @@ class _CameraScreenState extends State<CameraScreen> {
         });
       }
     }
+  }
+
+  void _startImageStream() {
+    final detectionService = Provider.of<DetectionService>(context, listen: false);
+    _cameraController?.startImageStream((CameraImage image) async {
+      if (_isProcessingFrame) return;
+      if (detectionService.runMode != AppRunMode.LIVE_CAMERA || !detectionService.isDetecting) return;
+      
+      _isProcessingFrame = true;
+      try {
+        if (image.planes.length >= 3) {
+          final yPlane = image.planes[0];
+          final uPlane = image.planes[1];
+          final vPlane = image.planes[2];
+          
+          await detectionService.processFrame(
+            width: image.width,
+            height: image.height,
+            yBytes: yPlane.bytes,
+            uBytes: uPlane.bytes,
+            vBytes: vPlane.bytes,
+            yRowStride: yPlane.bytesPerRow,
+            uRowStride: uPlane.bytesPerRow,
+            vRowStride: vPlane.bytesPerRow,
+            uPixelStride: uPlane.bytesPerPixel ?? 1,
+            vPixelStride: vPlane.bytesPerPixel ?? 1,
+          );
+        }
+      } catch (e) {
+        debugPrint("Error streaming camera frame: $e");
+      } finally {
+        _isProcessingFrame = false;
+      }
+    });
   }
 
   void _onDetectionUpdate() {

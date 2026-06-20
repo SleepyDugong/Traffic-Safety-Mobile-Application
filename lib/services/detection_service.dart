@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/detected_object.dart';
@@ -87,6 +88,42 @@ class DetectionService with ChangeNotifier {
         _generateSimulatedFrame();
       }
       await Future.delayed(const Duration(milliseconds: 100)); // Poll at 10 FPS
+    }
+  }
+
+  Future<void> processFrame({
+    required int width,
+    required int height,
+    required Uint8List yBytes,
+    required Uint8List uBytes,
+    required Uint8List vBytes,
+    required int yRowStride,
+    required int uRowStride,
+    required int vRowStride,
+    required int uPixelStride,
+    required int vPixelStride,
+  }) async {
+    if (!_isDetecting || _runMode != AppRunMode.LIVE_CAMERA) return;
+    try {
+      final List<dynamic> results = await _platformChannel.invokeMethod('processFrame', {
+        'width': width,
+        'height': height,
+        'y': yBytes,
+        'u': uBytes,
+        'v': vBytes,
+        'yRowStride': yRowStride,
+        'uRowStride': uRowStride,
+        'vRowStride': vRowStride,
+        'uPixelStride': uPixelStride,
+        'vPixelStride': vPixelStride,
+      });
+      _currentDetections = results.map((e) {
+        final map = Map<String, dynamic>.from(e);
+        return DetectedObject.fromJson(map);
+      }).toList();
+      notifyListeners();
+    } on PlatformException catch (e) {
+      debugPrint("Native Platform Channel processFrame Error: ${e.message}");
     }
   }
 
