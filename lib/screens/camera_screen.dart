@@ -159,7 +159,7 @@ class _CameraScreenState extends State<CameraScreen> {
     final verdict = safetyEngine.evaluateSafety(detectionService.currentDetections);
 
     // 2. Trigger alarms if detecting
-    if (detectionService.isDetecting && detectionService.currentDetections.isNotEmpty) {
+    if (detectionService.isDetecting) {
       alertService.triggerAlert(verdict);
     }
   }

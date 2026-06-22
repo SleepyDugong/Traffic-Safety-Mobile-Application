@@ -34,12 +34,27 @@ class _DetectionPainter extends CustomPainter {
         detection.boundingBox.height * size.height,
       );
 
-      final isDanger = detection.distanceCategory == DistanceCategory.VERY_CLOSE || 
-                       (detection.distanceCategory == DistanceCategory.CLOSE && detection.isApproaching);
+      Color boxColor;
+      Color bracketColor;
+
+      final category = detection.distanceCategory;
+      final isApproaching = detection.isApproaching;
+
+      if (category == DistanceCategory.VERY_CLOSE || 
+          (category == DistanceCategory.CLOSE && isApproaching)) {
+        boxColor = const Color(0xFFFF3B30); // Red
+        bracketColor = const Color(0xFFFF453A); // Neon Red
+      } else if (category == DistanceCategory.MEDIUM && isApproaching) {
+        boxColor = const Color(0xFFFF9F0A); // Yellow/Amber
+        bracketColor = const Color(0xFFFFB30A); // Neon Yellow
+      } else {
+        boxColor = const Color(0xFF30D158); // Green
+        bracketColor = const Color(0xFF34C759); // Neon Green
+      }
 
       // Neon paint for bounding boxes
       final boxPaint = Paint()
-        ..color = isDanger ? const Color(0xFFFF3B30) : const Color(0xFF30D158)
+        ..color = boxColor
         ..style = PaintingStyle.stroke
         ..strokeWidth = 3.0
         ..strokeCap = StrokeCap.round;
@@ -52,7 +67,7 @@ class _DetectionPainter extends CustomPainter {
 
       // Draw corner brackets for high-tech HUD look
       final bracketPaint = Paint()
-        ..color = isDanger ? const Color(0xFFFF453A) : const Color(0xFF34C759)
+        ..color = bracketColor
         ..style = PaintingStyle.stroke
         ..strokeWidth = 5.0;
 
@@ -80,9 +95,9 @@ class _DetectionPainter extends CustomPainter {
           color: Colors.white,
           fontSize: 12.0,
           fontWeight: FontWeight.bold,
-          backgroundColor: isDanger ? const Color(0xFFFF3B30).withOpacity(0.85) : const Color(0xFF30D158).withOpacity(0.85),
+          backgroundColor: boxColor.withOpacity(0.85),
         ),
-        text: " ${detection.label} • ${detection.estimatedDistance.toStringAsFixed(1)}m ${detection.isApproaching ? '▲' : '▼'} ",
+        text: " ${detection.label.toUpperCase()} • ${detection.estimatedDistance.toStringAsFixed(1)}m ${detection.isApproaching ? '▲' : '▼'} ",
       );
 
       final textPainter = TextPainter(

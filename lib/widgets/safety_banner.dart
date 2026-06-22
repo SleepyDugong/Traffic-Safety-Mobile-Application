@@ -44,12 +44,12 @@ class _SafetyBannerState extends State<SafetyBanner> with SingleTickerProviderSt
     switch (widget.verdict) {
       case "DANGER":
         bannerColor = const Color(0xFFFF3B30); // Red
-        labelText = "STOP! VEHICLE APPROACHING";
+        labelText = "WARNING! DO NOT CROSS";
         icon = Icons.warning_amber_rounded;
         break;
       case "CAUTION":
         bannerColor = const Color(0xFFFF9F0A); // Amber/Orange
-        labelText = "CAUTION! VEHICLE APPROACHING";
+        labelText = "CAUTION! VEHICLE DETECTED";
         icon = Icons.warning_amber_rounded;
         break;
       case "SAFE":
