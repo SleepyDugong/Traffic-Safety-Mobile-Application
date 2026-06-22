@@ -37,13 +37,30 @@ class _SafetyBannerState extends State<SafetyBanner> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
-    final isDanger = widget.verdict == "DANGER";
+    Color bannerColor;
+    String labelText;
+    IconData icon;
+
+    switch (widget.verdict) {
+      case "DANGER":
+        bannerColor = const Color(0xFFFF3B30); // Red
+        labelText = "STOP! VEHICLE APPROACHING";
+        icon = Icons.warning_amber_rounded;
+        break;
+      case "CAUTION":
+        bannerColor = const Color(0xFFFF9F0A); // Amber/Orange
+        labelText = "CAUTION! VEHICLE APPROACHING";
+        icon = Icons.warning_amber_rounded;
+        break;
+      case "SAFE":
+      default:
+        bannerColor = const Color(0xFF30D158); // Green
+        labelText = "SAFE TO CROSS";
+        icon = Icons.check_circle_outline_rounded;
+        break;
+    }
     
-    final Color bannerColor = isDanger ? const Color(0xFFFF3B30) : const Color(0xFF30D158);
     final Color shadowColor = bannerColor.withOpacity(0.4);
-    
-    final String labelText = isDanger ? "STOP! VEHICLE APPROACHING" : "SAFE TO CROSS";
-    final IconData icon = isDanger ? Icons.warning_amber_rounded : Icons.check_circle_outline_rounded;
 
     return ScaleTransition(
       scale: _pulseAnimation,

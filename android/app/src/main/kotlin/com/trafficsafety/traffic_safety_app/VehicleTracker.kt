@@ -11,7 +11,9 @@ data class TrackedObject(
     var boundingBox: RectF,
     var estimatedDistance: Double,
     var isApproaching: Boolean,
-    var lastSeenFrame: Long
+    var lastSeenFrame: Long,
+    var distanceCategory: String = "far",
+    var areaGrowthStreak: Int = 0
 )
 
 class VehicleTracker {
@@ -38,8 +40,8 @@ class VehicleTracker {
                 if (matchedDetectionIndices[i]) continue
                 val detection = detections[i]
                 
-                // Must be the same label to match
-                if (detection.label == tracked.label) {
+                // Must be the same label to match (case-insensitive)
+                if (detection.label.equals(tracked.label, ignoreCase = true)) {
                     val iou = calculateIoU(tracked.boundingBox, detection.boundingBox)
                     if (iou > bestIoU) {
                         bestIoU = iou
@@ -56,22 +58,28 @@ class VehicleTracker {
                 // Calculate distance before updating coordinates
                 val currentDistance = estimateDistance(detection.boundingBox, detection.label)
                 
-                // Estimate motion direction: if distance decreased, it's approaching.
-                // We also check bounding box area increase as a secondary check.
-                val prevArea = (tracked.boundingBox.right - tracked.boundingBox.left) * (tracked.boundingBox.bottom - tracked.boundingBox.top)
-                val currArea = (detection.boundingBox.right - detection.boundingBox.left) * (detection.boundingBox.bottom - detection.boundingBox.top)
+                // Estimate motion direction using bounding box area change
+                val currentArea = detection.boundingBox.width() * detection.boundingBox.height()
+                val previousArea = tracked.boundingBox.width() * tracked.boundingBox.height()
                 
-                val distanceDecreasing = currentDistance < tracked.estimatedDistance
-                val areaIncreasing = currArea > prevArea
+                if (currentArea > previousArea * 1.04f) {
+                    tracked.areaGrowthStreak++
+                } else {
+                    tracked.areaGrowthStreak = 0
+                }
                 
-                // A combination of both metrics for robust determination
-                tracked.isApproaching = distanceDecreasing || (areaIncreasing && Math.abs(currentDistance - tracked.estimatedDistance) < 2.0)
+                // Approaching if area grows by > 4% over at least 2 consecutive frames
+                tracked.isApproaching = tracked.areaGrowthStreak >= 2
                 
                 // Smooth distance using a running average (alpha = 0.6 for new value)
                 tracked.estimatedDistance = 0.4 * tracked.estimatedDistance + 0.6 * currentDistance
                 
+                // Update distance category
+                tracked.distanceCategory = getDistanceCategory(detection.boundingBox, detection.label)
+                
                 tracked.boundingBox = detection.boundingBox
                 tracked.confidence = detection.confidence
+                tracked.label = detection.label // keep label updated
                 tracked.lastSeenFrame = frameCount
                 newTrackedList.add(tracked)
             } else {
@@ -87,6 +95,7 @@ class VehicleTracker {
             if (matchedDetectionIndices[i]) continue
             val detection = detections[i]
             val distance = estimateDistance(detection.boundingBox, detection.label)
+            val category = getDistanceCategory(detection.boundingBox, detection.label)
             val newTrack = TrackedObject(
                 id = UUID.randomUUID().toString(),
                 label = detection.label,
@@ -94,7 +103,9 @@ class VehicleTracker {
                 boundingBox = detection.boundingBox,
                 estimatedDistance = distance,
                 isApproaching = true, // Default to approaching for warning safety
-                lastSeenFrame = frameCount
+                lastSeenFrame = frameCount,
+                distanceCategory = category,
+                areaGrowthStreak = 0
             )
             newTrackedList.add(newTrack)
         }
@@ -106,30 +117,22 @@ class VehicleTracker {
     
     // Heuristic distance estimation in meters based on height or width of bounding box
     private fun estimateDistance(box: RectF, label: String): Double {
-        val width = box.right - box.left
-        val height = box.bottom - box.top
+        val height = box.height()
         
-        // Standard heights/widths of classes in meters (assumed prior knowledge)
-        // Focal length multiplier based on typical mobile camera field of view (approx 60 deg)
-        // Distance = (RealDimension * FocalLengthFactor) / BoundingBoxDimension
-        
-        return when (label) {
-            "Pedestrian" -> {
-                // Real height: ~1.7 meters.
+        return when {
+            label.equals("Pedestrian", ignoreCase = true) -> {
                 val focalFactor = 5.0
                 (1.7 * focalFactor) / height
             }
-            "Car" -> {
-                // Real width: ~1.8 meters, real height: ~1.5 meters.
-                val focalFactor = 6.0
-                (1.5 * focalFactor) / height
+            label.equals("car", ignoreCase = true) -> {
+                // Custom physics-based formula for passenger cars: 7.0 / heightRatio
+                7.0 / height
             }
-            "Motorcycle", "Bicycle" -> {
+            label.equals("Motorcycle", ignoreCase = true) || label.equals("Bicycle", ignoreCase = true) -> {
                 val focalFactor = 5.5
                 (1.4 * focalFactor) / height
             }
-            "Truck" -> {
-                // Real height: ~3.0 meters
+            label.equals("Truck", ignoreCase = true) -> {
                 val focalFactor = 7.0
                 (3.0 * focalFactor) / height
             }
@@ -137,7 +140,28 @@ class VehicleTracker {
                 val focalFactor = 5.0
                 (1.5 * focalFactor) / height
             }
-        }.coerceIn(0.5, 80.0) // Clamp to reasonable ranges
+        }.toDouble().coerceIn(0.5, 80.0) // Clamp to reasonable ranges
+    }
+
+    // Determine distance category natively based on bounding box height ratio or general distance
+    private fun getDistanceCategory(box: RectF, label: String): String {
+        if (label.equals("car", ignoreCase = true)) {
+            val heightRatio = box.height()
+            return when {
+                heightRatio > 0.48f -> "very_close"  // Distance < 6 meters (ratio > 0.48)
+                heightRatio > 0.28f -> "close"       // Distance 6 - 12 meters
+                heightRatio > 0.12f -> "medium"      // Distance 12 - 25 meters
+                else -> "far"
+            }
+        } else {
+            val distance = estimateDistance(box, label)
+            return when {
+                distance < 5.0 -> "very_close"
+                distance < 15.0 -> "close"
+                distance < 25.0 -> "medium"
+                else -> "far"
+            }
+        }
     }
 
     private fun calculateIoU(boxA: RectF, boxB: RectF): Float {

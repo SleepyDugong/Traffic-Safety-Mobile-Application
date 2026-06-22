@@ -36,10 +36,27 @@ class AlertService with ChangeNotifier {
   }
 
   /// Triggers safety audio and physical vibrations.
-  /// Decides based on the verdict string: "SAFE" or "DANGER".
+  /// Decides based on the verdict string: "SAFE", "CAUTION", or "DANGER".
   void triggerAlert(String verdict, {String? customMessage}) async {
     final now = DateTime.now();
-    final message = customMessage ?? (verdict == "SAFE" ? "Safe to cross. Walk carefully." : "Stop! Vehicle approaching!");
+    
+    String message;
+    if (customMessage != null) {
+      message = customMessage;
+    } else {
+      switch (verdict) {
+        case "DANGER":
+          message = "Stop! Vehicle approaching!";
+          break;
+        case "CAUTION":
+          message = "Caution! Vehicle approaching!";
+          break;
+        case "SAFE":
+        default:
+          message = "Safe to cross. Walk carefully.";
+          break;
+      }
+    }
 
     // Play Vibration
     if (_hapticsEnabled) {
@@ -48,6 +65,9 @@ class AlertService with ChangeNotifier {
         if (verdict == "DANGER") {
           // Double buzz alert for danger
           Vibration.vibrate(pattern: [0, 500, 200, 500]);
+        } else if (verdict == "CAUTION") {
+          // Single medium buzz alert for caution
+          Vibration.vibrate(duration: 350);
         } else {
           // Single short gentle tap vibration for safe confirmation
           Vibration.vibrate(duration: 100);
@@ -63,12 +83,7 @@ class AlertService with ChangeNotifier {
         _lastSpeechTime = now;
         _lastSpokenText = message;
         
-        if (kIsWeb) {
-          // Web TTS often needs user interaction, but we'll try to trigger it
-          await _tts.speak(message);
-        } else {
-          await _tts.speak(message);
-        }
+        await _tts.speak(message);
       }
     }
   }

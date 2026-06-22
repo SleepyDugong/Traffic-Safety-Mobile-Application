@@ -13,10 +13,7 @@ class SafetyEngine with ChangeNotifier {
     notifyListeners();
   }
 
-  /// Evaluates safety and returns a verdict.
-  /// If any vehicle is closer than 5 meters, OR
-  /// if a vehicle is between 5 and threshold meters AND is approaching,
-  /// then it returns DANGER. Otherwise it is SAFE.
+  /// Evaluates safety and returns a verdict: DANGER, CAUTION, or SAFE.
   String evaluateSafety(List<DetectedObject> detections) {
     if (detections.isEmpty) {
       _currentVerdict = "SAFE";
@@ -24,28 +21,37 @@ class SafetyEngine with ChangeNotifier {
       return _currentVerdict;
     }
 
-    bool hasDanger = false;
+    String verdict = "SAFE";
+
     for (var detection in detections) {
-      // Skip non-vehicle detections for crossing verdicts (like other pedestrians)
+      // Skip non-vehicle detections (like other pedestrians)
       if (detection.label.toLowerCase() == 'pedestrian') {
         continue;
       }
 
-      final distance = detection.estimatedDistance;
+      final category = detection.distanceCategory;
       final isApproaching = detection.isApproaching;
 
-      if (distance < 5.0) {
-        // Cars under 5m are immediately dangerous
-        hasDanger = true;
-        break;
-      } else if (distance < _dangerThresholdDistance && isApproaching) {
-        // Cars within threshold moving towards the pedestrian are dangerous
-        hasDanger = true;
-        break;
+      // Evaluate safety rules:
+      if (category == DistanceCategory.VERY_CLOSE) {
+        // Rule 1: very_close vehicles trigger DANGER immediately (immediate hazard)
+        verdict = "DANGER";
+        break; // DANGER is the highest severity, stop checks
+      } else if (category == DistanceCategory.CLOSE && isApproaching) {
+        // Rule 2: close approaching vehicles trigger DANGER
+        verdict = "DANGER";
+        break; // DANGER is the highest severity
+      } else if (category == DistanceCategory.MEDIUM && isApproaching) {
+        // Rule 3: medium approaching vehicles trigger CAUTION (yellow warning)
+        // If a subsequent detection is dangerous, it will upgrade this to DANGER.
+        if (verdict != "DANGER") {
+          verdict = "CAUTION";
+        }
       }
+      // Rule 4: receding vehicles (isApproaching == false) or distant vehicles leave status as SAFE (unless other checks apply)
     }
 
-    _currentVerdict = hasDanger ? "DANGER" : "SAFE";
+    _currentVerdict = verdict;
     notifyListeners();
     return _currentVerdict;
   }

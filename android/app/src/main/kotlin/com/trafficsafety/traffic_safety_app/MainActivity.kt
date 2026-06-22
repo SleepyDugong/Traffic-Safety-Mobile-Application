@@ -90,7 +90,8 @@ class MainActivity : FlutterActivity() {
                                             (obj.boundingBox.bottom - obj.boundingBox.top).toDouble()
                                         ),
                                         "estimatedDistance" to obj.estimatedDistance,
-                                        "isApproaching" to obj.isApproaching
+                                        "isApproaching" to obj.isApproaching,
+                                        "distanceCategory" to obj.distanceCategory
                                     )
                                 }
                                 latestDetections = results

@@ -23,7 +23,7 @@ class YoloDetector(private val assetManager: AssetManager) {
 
     init {
         try {
-            val modelBuffer = loadModelFile(assetManager, "yolov8n.tflite")
+            val modelBuffer = loadModelFile(assetManager, "yolov8n_car.tflite")
             val options = Interpreter.Options()
             
             // Try enabling GPU delegate, fallback to CPU
@@ -100,7 +100,7 @@ class YoloDetector(private val assetManager: AssetManager) {
                 val label = when (maxClassId) {
                     0 -> "Pedestrian"
                     1 -> "Bicycle"
-                    2 -> "Car"
+                    2 -> "car"
                     3 -> "Motorcycle"
                     5 -> "Truck" // Map bus/large vehicle to Truck
                     7 -> "Truck"
