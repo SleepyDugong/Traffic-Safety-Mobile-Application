@@ -12,7 +12,7 @@ enum AppRunMode {
 class DetectionService with ChangeNotifier {
   static const MethodChannel _platformChannel = MethodChannel('com.trafficsafety.app/yolo');
   
-  AppRunMode _runMode = AppRunMode.SIMULATION;
+  AppRunMode _runMode = AppRunMode.LIVE_CAMERA;
   bool _isDetecting = false;
   List<DetectedObject> _currentDetections = [];
   
@@ -102,6 +102,7 @@ class DetectionService with ChangeNotifier {
     required int vRowStride,
     required int uPixelStride,
     required int vPixelStride,
+    int sensorOrientation = 90,
   }) async {
     if (!_isDetecting || _runMode != AppRunMode.LIVE_CAMERA) return;
     try {
@@ -116,6 +117,7 @@ class DetectionService with ChangeNotifier {
         'vRowStride': vRowStride,
         'uPixelStride': uPixelStride,
         'vPixelStride': vPixelStride,
+        'sensorOrientation': sensorOrientation,
       });
       _currentDetections = results.map((e) {
         final map = Map<String, dynamic>.from(e);

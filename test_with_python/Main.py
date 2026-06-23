@@ -122,7 +122,7 @@ def evaluate_safety_verdict(tracked_objects):
     verdict = "SAFE"
     
     for obj_id, obj in tracked_objects.items():
-        if obj["label"] == "pedestrian":
+        if obj["label"] == "person" or obj["label"] == "pedestrian":
             continue
 
         category = obj["distance_category"]
@@ -151,7 +151,7 @@ def main():
     
     # Target COCO IDs mapped to domains of interest
     target_classes = {
-        0: "pedestrian",
+        0: "person",
         1: "bicycle",
         2: "car",
         3: "motorcycle",

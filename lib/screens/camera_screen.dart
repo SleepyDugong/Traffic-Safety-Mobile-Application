@@ -139,6 +139,7 @@ class _CameraScreenState extends State<CameraScreen> {
             vRowStride: vPlane.bytesPerRow,
             uPixelStride: uPlane.bytesPerPixel ?? 1,
             vPixelStride: vPlane.bytesPerPixel ?? 1,
+            sensorOrientation: _cameraController!.description.sensorOrientation,
           );
         }
       } catch (e) {

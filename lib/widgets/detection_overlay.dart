@@ -99,7 +99,7 @@ class _DetectionPainter extends CustomPainter {
           fontWeight: FontWeight.bold,
           backgroundColor: boxColor.withOpacity(0.85),
         ),
-        text: " ${detection.label.toUpperCase()} • ${detection.estimatedDistance.toStringAsFixed(1)}m ${detection.isApproaching ? '▲' : '▼'} ",
+        text: " ${detection.label.toUpperCase()} ${(detection.confidence * 100).toInt()}% • ${detection.estimatedDistance.toStringAsFixed(1)}m ${detection.isApproaching ? '▲' : '▼'} ",
       );
 
       final textPainter = TextPainter(

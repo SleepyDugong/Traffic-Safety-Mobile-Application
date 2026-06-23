@@ -98,11 +98,11 @@ class YoloDetector(private val assetManager: AssetManager) {
                 
                 // Map COCO IDs to labels of interest
                 val label = when (maxClassId) {
-                    0 -> "Pedestrian"
+                    0 -> "Person"
                     1 -> "Bicycle"
-                    2 -> "car"
+                    2 -> "Car"
                     3 -> "Motorcycle"
-                    5 -> "Truck" // Map bus/large vehicle to Truck
+                    5 -> "Bus"
                     7 -> "Truck"
                     else -> null // Filter out classes not relevant to our HUD warnings
                 }

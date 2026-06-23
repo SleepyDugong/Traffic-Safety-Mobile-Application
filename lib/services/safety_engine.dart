@@ -24,8 +24,9 @@ class SafetyEngine with ChangeNotifier {
     String verdict = "SAFE";
 
     for (var detection in detections) {
-      // Skip non-vehicle detections (like other pedestrians)
-      if (detection.label.toLowerCase() == 'pedestrian') {
+      final normLabel = detection.label.toLowerCase();
+      // Skip non-vehicle detections (like other pedestrians/persons)
+      if (normLabel == 'pedestrian' || normLabel == 'person') {
         continue;
       }
 
