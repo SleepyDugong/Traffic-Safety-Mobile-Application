@@ -28,18 +28,11 @@ class DetectedObject {
   }) : this.distanceCategory = distanceCategory ?? _calculateCategory(estimatedDistance, label, boundingBox);
 
   static DistanceCategory _calculateCategory(double distance, String label, Rect box) {
-    if (label.toLowerCase() == 'car') {
-      final heightRatio = box.height;
-      if (heightRatio > 0.48) return DistanceCategory.VERY_CLOSE;
-      if (heightRatio > 0.28) return DistanceCategory.CLOSE;
-      if (heightRatio > 0.12) return DistanceCategory.MEDIUM;
-      return DistanceCategory.FAR;
-    } else {
-      if (distance < 5.0) return DistanceCategory.VERY_CLOSE;
-      if (distance < 15.0) return DistanceCategory.CLOSE;
-      if (distance < 25.0) return DistanceCategory.MEDIUM;
-      return DistanceCategory.FAR;
-    }
+    final heightRatio = box.height;
+    if (heightRatio > 0.50) return DistanceCategory.VERY_CLOSE;
+    if (heightRatio > 0.30) return DistanceCategory.CLOSE;
+    if (heightRatio > 0.15) return DistanceCategory.MEDIUM;
+    return DistanceCategory.FAR;
   }
 
   // Helper to convert normalized coordinate representation into JSON

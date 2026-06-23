@@ -71,7 +71,7 @@ class AlertService with ChangeNotifier {
           if (verdict == "DANGER") {
             // Red Alert: Continuous vibration pattern
             Vibration.vibrate(pattern: [0, 500, 200, 500], repeat: 0);
-          } else if (verdict == "CAUTION") {
+          } else if (verdict == "WARNING" || verdict == "CAUTION") {
             // Yellow Alert: Two medium vibrations
             Vibration.vibrate(pattern: [0, 250, 150, 250]);
           } else {
@@ -97,11 +97,18 @@ class AlertService with ChangeNotifier {
               _tts.speak("Warning. Vehicle approaching. Do not cross.");
             }
           });
+        } else if (verdict == "WARNING") {
+          _playAudioFile("Not Safe.mp3");
+          Future.delayed(const Duration(milliseconds: 1600), () {
+            if (_lastVerdict == "WARNING") {
+              _tts.speak("Please wait. Vehicle detected.");
+            }
+          });
         } else if (verdict == "CAUTION") {
           _playAudioFile("Not Safe.mp3");
           Future.delayed(const Duration(milliseconds: 1600), () {
             if (_lastVerdict == "CAUTION") {
-              _tts.speak("Please wait. Incoming traffic detected.");
+              _tts.speak("Please be careful.");
             }
           });
         }

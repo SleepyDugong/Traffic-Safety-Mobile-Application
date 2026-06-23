@@ -115,52 +115,21 @@ class VehicleTracker {
         return trackedObjects
     }
     
-    // Heuristic distance estimation in meters based on height or width of bounding box
+    // Heuristic distance estimation in meters based on height of bounding box (3.0 / height)
     private fun estimateDistance(box: RectF, label: String): Double {
         val height = box.height()
-        
-        return when {
-            label.equals("Pedestrian", ignoreCase = true) -> {
-                val focalFactor = 5.0
-                (1.7 * focalFactor) / height
-            }
-            label.equals("car", ignoreCase = true) -> {
-                // Custom physics-based formula for passenger cars: 7.0 / heightRatio
-                7.0 / height
-            }
-            label.equals("Motorcycle", ignoreCase = true) || label.equals("Bicycle", ignoreCase = true) -> {
-                val focalFactor = 5.5
-                (1.4 * focalFactor) / height
-            }
-            label.equals("Truck", ignoreCase = true) -> {
-                val focalFactor = 7.0
-                (3.0 * focalFactor) / height
-            }
-            else -> {
-                val focalFactor = 5.0
-                (1.5 * focalFactor) / height
-            }
-        }.toDouble().coerceIn(0.5, 80.0) // Clamp to reasonable ranges
+        val calculated = 3.0 / height.toDouble()
+        return calculated.coerceIn(0.5, 80.0)
     }
 
-    // Determine distance category natively based on bounding box height ratio or general distance
+    // Determine distance category natively based on bounding box height ratio
     private fun getDistanceCategory(box: RectF, label: String): String {
-        if (label.equals("car", ignoreCase = true)) {
-            val heightRatio = box.height()
-            return when {
-                heightRatio > 0.48f -> "very_close"  // Distance < 6 meters (ratio > 0.48)
-                heightRatio > 0.28f -> "close"       // Distance 6 - 12 meters
-                heightRatio > 0.12f -> "medium"      // Distance 12 - 25 meters
-                else -> "far"
-            }
-        } else {
-            val distance = estimateDistance(box, label)
-            return when {
-                distance < 5.0 -> "very_close"
-                distance < 15.0 -> "close"
-                distance < 25.0 -> "medium"
-                else -> "far"
-            }
+        val heightRatio = box.height()
+        return when {
+            heightRatio > 0.50f -> "very_close"
+            heightRatio > 0.30f -> "close"
+            heightRatio > 0.15f -> "medium"
+            else -> "far"
         }
     }
 

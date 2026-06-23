@@ -40,10 +40,12 @@ class _DetectionPainter extends CustomPainter {
       final category = detection.distanceCategory;
       final isApproaching = detection.isApproaching;
 
-      if (category == DistanceCategory.VERY_CLOSE || 
-          (category == DistanceCategory.CLOSE && isApproaching)) {
+      if (category == DistanceCategory.VERY_CLOSE && isApproaching) {
         boxColor = const Color(0xFFFF3B30); // Red
         bracketColor = const Color(0xFFFF453A); // Neon Red
+      } else if (category == DistanceCategory.CLOSE && isApproaching) {
+        boxColor = const Color(0xFFFF9F0A); // Yellow/Amber
+        bracketColor = const Color(0xFFFFB30A); // Neon Yellow
       } else if (category == DistanceCategory.MEDIUM && isApproaching) {
         boxColor = const Color(0xFFFF9F0A); // Yellow/Amber
         bracketColor = const Color(0xFFFFB30A); // Neon Yellow
