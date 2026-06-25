@@ -34,25 +34,8 @@ class _DetectionPainter extends CustomPainter {
         detection.boundingBox.height * size.height,
       );
 
-      Color boxColor;
-      Color bracketColor;
-
-      final category = detection.distanceCategory;
-      final isApproaching = detection.isApproaching;
-
-      if (category == DistanceCategory.VERY_CLOSE && isApproaching) {
-        boxColor = const Color(0xFFFF3B30); // Red
-        bracketColor = const Color(0xFFFF453A); // Neon Red
-      } else if (category == DistanceCategory.CLOSE && isApproaching) {
-        boxColor = const Color(0xFFFF9F0A); // Yellow/Amber
-        bracketColor = const Color(0xFFFFB30A); // Neon Yellow
-      } else if (category == DistanceCategory.MEDIUM && isApproaching) {
-        boxColor = const Color(0xFFFF9F0A); // Yellow/Amber
-        bracketColor = const Color(0xFFFFB30A); // Neon Yellow
-      } else {
-        boxColor = const Color(0xFF30D158); // Green
-        bracketColor = const Color(0xFF34C759); // Neon Green
-      }
+      Color boxColor = const Color(0xFF30D158); // Green
+      Color bracketColor = const Color(0xFF34C759); // Neon Green
 
       // Neon paint for bounding boxes
       final boxPaint = Paint()

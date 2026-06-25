@@ -234,17 +234,14 @@ def main():
 
             # Determine individual warning style
             if dist_cat == "very_close" and is_approaching:
-                box_color = (0, 0, 255)  # Red
                 alert_level = "danger"
             elif dist_cat == "close" and is_approaching:
-                box_color = (0, 255, 255)  # Yellow
                 alert_level = "warning"
             elif dist_cat == "medium" and is_approaching:
-                box_color = (0, 255, 255)  # Yellow
                 alert_level = "caution"
             else:
-                box_color = (0, 255, 0)  # Green
                 alert_level = "safe"
+            box_color = (0, 255, 0)  # Always Green (BGR)
 
             # Draw bounding box
             cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), box_color, 2)
@@ -382,17 +379,14 @@ def main():
 
           # Determine individual warning style
           if dist_cat == "very_close" and is_approaching:
-              box_color = (0, 0, 255)  # Red
               alert_level = "danger"
           elif dist_cat == "close" and is_approaching:
-              box_color = (0, 255, 255)  # Yellow
               alert_level = "warning"
           elif dist_cat == "medium" and is_approaching:
-              box_color = (0, 255, 255)  # Yellow
               alert_level = "caution"
           else:
-              box_color = (0, 255, 0)  # Green
               alert_level = "safe"
+          box_color = (0, 255, 0)  # Always Green (BGR)
 
           # Draw neon bounding box
           cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), box_color, 2)
