@@ -34,9 +34,36 @@ class _DetectionPainter extends CustomPainter {
         detection.boundingBox.height * size.height,
       );
 
-      // Neon green paint for sharp bounding boxes (MediaPipe style)
+      // Dynamic color logic based on safety prompt rules
+      Color boxColor = Colors.green;
+      final labelLower = detection.label.toLowerCase();
+      final isVehicle = labelLower == 'car' ||
+                        labelLower == 'bus' ||
+                        labelLower == 'truck' ||
+                        labelLower == 'motorcycle' ||
+                        labelLower == 'bicycle' ||
+                        labelLower == 'bike';
+
+      if (isVehicle) {
+        if (detection.isApproaching) {
+          if (detection.distanceCategory == DistanceCategory.VERY_CLOSE ||
+              detection.distanceCategory == DistanceCategory.CLOSE) {
+            boxColor = Colors.red;
+          } else if (detection.distanceCategory == DistanceCategory.MEDIUM) {
+            boxColor = Colors.yellow;
+          } else {
+            boxColor = Colors.green;
+          }
+        } else {
+          boxColor = Colors.green; // stopped or moving away
+        }
+      } else {
+        // Pedestrians / Persons default to green (safe)
+        boxColor = Colors.green;
+      }
+
       final paint = Paint()
-        ..color = const Color(0xFF30D158)
+        ..color = boxColor
         ..strokeWidth = 3.0
         ..style = PaintingStyle.stroke;
 
@@ -46,8 +73,8 @@ class _DetectionPainter extends CustomPainter {
       // Configure text span
       final textSpan = TextSpan(
         text: " ${detection.label.toUpperCase()} ${(detection.confidence * 100).toStringAsFixed(0)}% • ${detection.estimatedDistance.toStringAsFixed(1)}m ${detection.isApproaching ? '▲' : '▼'} ",
-        style: const TextStyle(
-          color: Color(0xFF30D158),
+        style: TextStyle(
+          color: boxColor,
           fontSize: 14,
           fontWeight: FontWeight.bold,
         ),

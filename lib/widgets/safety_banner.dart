@@ -42,22 +42,13 @@ class _SafetyBannerState extends State<SafetyBanner> with SingleTickerProviderSt
     IconData icon;
 
     switch (widget.verdict) {
-      case "DANGER":
+      case "NOT_SAFE":
         bannerColor = const Color(0xFFFF3B30); // Red
         labelText = "WARNING! DO NOT CROSS";
         icon = Icons.warning_amber_rounded;
         break;
-      case "WARNING":
-        bannerColor = const Color(0xFFFF9F0A); // Yellow/Amber
-        labelText = "WARNING! VEHICLE DETECTED";
-        icon = Icons.warning_amber_rounded;
-        break;
-      case "CAUTION":
-        bannerColor = const Color(0xFFFF9F0A); // Amber/Orange
-        labelText = "CAUTION! VEHICLE DETECTED";
-        icon = Icons.warning_amber_rounded;
-        break;
-      case "SAFE":
+      case "SAFE_STOPPED":
+      case "SAFE_NO_VEHICLES":
       default:
         bannerColor = const Color(0xFF30D158); // Green
         labelText = "SAFE TO CROSS";

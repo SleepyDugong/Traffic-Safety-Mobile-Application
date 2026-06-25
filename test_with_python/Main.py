@@ -119,28 +119,15 @@ class PythonVehicleTracker:
 
 
 def evaluate_safety_verdict(tracked_objects):
-    verdict = "SAFE"
+    vehicles = {k: v for k, v in tracked_objects.items() if v["label"] not in ["person", "pedestrian"]}
+    if not vehicles:
+        return "SAFE_NO_VEHICLES"
     
-    for obj_id, obj in tracked_objects.items():
-        if obj["label"] == "person" or obj["label"] == "pedestrian":
-            continue
-
-        category = obj["distance_category"]
-        is_approaching = obj["is_approaching"]
-
-        if category == "very_close" and is_approaching:
-            # Rule 1: Very Close + Approaching = DANGER
-            return "DANGER"
-        elif category == "close" and is_approaching:
-            # Rule 2: Close + Approaching = WARNING
-            if verdict != "DANGER":
-                verdict = "WARNING"
-        elif category == "medium" and is_approaching:
-            # Rule 3: Medium + Approaching = CAUTION
-            if verdict != "DANGER" and verdict != "WARNING":
-                verdict = "CAUTION"
-                
-    return verdict
+    has_approaching = any(v["is_approaching"] for v in vehicles.values())
+    if has_approaching:
+        return "NOT_SAFE"
+    else:
+        return "SAFE_STOPPED"
 
 
 def main():
@@ -200,18 +187,14 @@ def main():
         overall_verdict = evaluate_safety_verdict(tracked_objects)
 
         # Determine HUD Styles
-        if overall_verdict == "DANGER":
+        if overall_verdict == "NOT_SAFE":
             banner_color = (0, 0, 255)  # Red (BGR)
             banner_text = "WARNING! DO NOT CROSS"
             tts_msg = "Warning. Vehicle approaching. Do not cross."
-        elif overall_verdict == "WARNING":
-            banner_color = (0, 255, 255)  # Yellow (BGR)
-            banner_text = "WARNING! VEHICLE DETECTED"
-            tts_msg = "Please wait. Vehicle detected."
-        elif overall_verdict == "CAUTION":
-            banner_color = (0, 255, 255)  # Yellow (BGR)
-            banner_text = "CAUTION! VEHICLE DETECTED"
-            tts_msg = "Please be careful."
+        elif overall_verdict == "SAFE_STOPPED":
+            banner_color = (0, 255, 0)  # Green (BGR)
+            banner_text = "ROAD IS SAFE. WALK NOW"
+            tts_msg = "You may walk now. Road is safe."
         else:
             banner_color = (0, 255, 0)  # Green (BGR)
             banner_text = "SAFE TO CROSS"
@@ -232,16 +215,24 @@ def main():
             dist_cat = obj["distance_category"]
             is_approaching = obj["is_approaching"]
 
-            # Determine individual warning style
-            if dist_cat == "very_close" and is_approaching:
-                alert_level = "danger"
-            elif dist_cat == "close" and is_approaching:
-                alert_level = "warning"
-            elif dist_cat == "medium" and is_approaching:
-                alert_level = "caution"
+            # Determine individual warning style and box color
+            if label not in ["person", "pedestrian"]:
+                if is_approaching:
+                    if dist_cat in ["very_close", "close"]:
+                        alert_level = "danger"
+                        box_color = (0, 0, 255)  # Red (BGR)
+                    elif dist_cat == "medium":
+                        alert_level = "caution"
+                        box_color = (0, 255, 255)  # Yellow (BGR)
+                    else:
+                        alert_level = "safe"
+                        box_color = (0, 255, 0)  # Green (BGR)
+                else:
+                    alert_level = "safe"
+                    box_color = (0, 255, 0)  # Green (BGR)
             else:
                 alert_level = "safe"
-            box_color = (0, 255, 0)  # Always Green (BGR)
+                box_color = (0, 255, 0)  # Green (BGR)
 
             # Draw bounding box (thickness 3 like MediaPipe style)
             cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), box_color, 3)
@@ -252,9 +243,9 @@ def main():
             text_x = bbox[0]
             text_y = bbox[1] - 10 if bbox[1] - 10 > 20 else bbox[1] + 20
             cv2.rectangle(frame, (text_x, text_y - text_size[1] - 4), (text_x + text_size[0] + 4, text_y + 4), (0, 0, 0), -1)
-            # Draw green text
+            # Draw color-coded text
             cv2.putText(frame, label_str, (text_x + 2, text_y), 
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, box_color, 1, cv2.LINE_AA)
 
             # Build formatted JSON target object printout
             target_info = {
@@ -335,18 +326,14 @@ def main():
       overall_verdict = evaluate_safety_verdict(tracked_objects)
 
       # Determine HUD Styles
-      if overall_verdict == "DANGER":
+      if overall_verdict == "NOT_SAFE":
           banner_color = (0, 0, 255)  # Red (BGR)
           banner_text = "WARNING! DO NOT CROSS"
           tts_msg = "Warning. Vehicle approaching. Do not cross."
-      elif overall_verdict == "WARNING":
-          banner_color = (0, 255, 255)  # Yellow (BGR)
-          banner_text = "WARNING! VEHICLE DETECTED"
-          tts_msg = "Please wait. Vehicle detected."
-      elif overall_verdict == "CAUTION":
-          banner_color = (0, 255, 255)  # Yellow (BGR)
-          banner_text = "CAUTION! VEHICLE DETECTED"
-          tts_msg = "Please be careful."
+      elif overall_verdict == "SAFE_STOPPED":
+          banner_color = (0, 255, 0)  # Green (BGR)
+          banner_text = "ROAD IS SAFE. WALK NOW"
+          tts_msg = "You may walk now. Road is safe."
       else:
           banner_color = (0, 255, 0)  # Green (BGR)
           banner_text = "SAFE TO CROSS"
@@ -368,16 +355,24 @@ def main():
           dist_cat = obj["distance_category"]
           is_approaching = obj["is_approaching"]
 
-          # Determine individual warning style
-          if dist_cat == "very_close" and is_approaching:
-              alert_level = "danger"
-          elif dist_cat == "close" and is_approaching:
-              alert_level = "warning"
-          elif dist_cat == "medium" and is_approaching:
-              alert_level = "caution"
+          # Determine individual warning style and box color
+          if label not in ["person", "pedestrian"]:
+              if is_approaching:
+                  if dist_cat in ["very_close", "close"]:
+                      alert_level = "danger"
+                      box_color = (0, 0, 255)  # Red (BGR)
+                  elif dist_cat == "medium":
+                      alert_level = "caution"
+                      box_color = (0, 255, 255)  # Yellow (BGR)
+                  else:
+                      alert_level = "safe"
+                      box_color = (0, 255, 0)  # Green (BGR)
+              else:
+                  alert_level = "safe"
+                  box_color = (0, 255, 0)  # Green (BGR)
           else:
               alert_level = "safe"
-          box_color = (0, 255, 0)  # Always Green (BGR)
+              box_color = (0, 255, 0)  # Green (BGR)
 
           # Draw bounding box (thickness 3 like MediaPipe style)
           cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), box_color, 3)
@@ -388,9 +383,9 @@ def main():
           text_x = bbox[0]
           text_y = bbox[1] - 10 if bbox[1] - 10 > 20 else bbox[1] + 20
           cv2.rectangle(frame, (text_x, text_y - text_size[1] - 4), (text_x + text_size[0] + 4, text_y + 4), (0, 0, 0), -1)
-          # Draw green text
+          # Draw color-coded text
           cv2.putText(frame, label_str, (text_x + 2, text_y), 
-                      cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
+                      cv2.FONT_HERSHEY_SIMPLEX, 0.5, box_color, 1, cv2.LINE_AA)
 
           # Build formatted JSON target object printout
           target_info = {

@@ -48,16 +48,16 @@ class AlertService with ChangeNotifier {
   }
 
   /// Triggers safety audio and physical vibrations.
-  /// Decides based on the verdict string: "SAFE", "CAUTION", or "DANGER".
+  /// Decides based on the verdict string: "NOT_SAFE", "SAFE_STOPPED", or "SAFE_NO_VEHICLES".
   void triggerAlert(String verdict, {String? customMessage}) async {
     final now = DateTime.now();
     
-    // Track state changes to avoid spamming "SAFE"
+    // Cooldown check to avoid spamming voice prompts
     final isStateChanged = _lastVerdict != verdict;
     final isCooldownElapsed = _lastSpeechTime == null || 
         now.difference(_lastSpeechTime!) > const Duration(seconds: 4);
 
-    if (isStateChanged || (verdict != "SAFE" && isCooldownElapsed)) {
+    if (isStateChanged || (verdict == "NOT_SAFE" && isCooldownElapsed)) {
       _lastSpeechTime = now;
       _lastVerdict = verdict;
 
@@ -68,47 +68,37 @@ class AlertService with ChangeNotifier {
           // Cancel any ongoing continuous vibrations first
           await Vibration.cancel();
           
-          if (verdict == "DANGER") {
-            // Red Alert: Continuous vibration pattern
+          if (verdict == "NOT_SAFE") {
+            // Red Alert: Continuous danger vibration pattern
             Vibration.vibrate(pattern: [0, 500, 200, 500], repeat: 0);
-          } else if (verdict == "WARNING" || verdict == "CAUTION") {
-            // Yellow Alert: Two medium vibrations
-            Vibration.vibrate(pattern: [0, 250, 150, 250]);
           } else {
-            // Green Alert: Single short vibration
+            // Green Alert (SAFE_STOPPED or SAFE_NO_VEHICLES): Single short vibration
             Vibration.vibrate(duration: 100);
           }
         }
       }
 
-      // Play Voice Messages (MP3 audio files from assets)
+      // Play Voice Messages (MP3 audio files from assets + Text-to-speech)
       if (_ttsEnabled) {
-        if (verdict == "SAFE") {
-          _playAudioFile("Now Safe.mp3");
-          Future.delayed(const Duration(milliseconds: 1600), () {
-            if (_lastVerdict == "SAFE") {
-              _tts.speak("Safe to cross.");
-            }
-          });
-        } else if (verdict == "DANGER") {
+        if (verdict == "NOT_SAFE") {
           _playAudioFile("Not Safe.mp3");
           Future.delayed(const Duration(milliseconds: 1600), () {
-            if (_lastVerdict == "DANGER") {
+            if (_lastVerdict == "NOT_SAFE") {
               _tts.speak("Warning. Vehicle approaching. Do not cross.");
             }
           });
-        } else if (verdict == "WARNING") {
-          _playAudioFile("Not Safe.mp3");
+        } else if (verdict == "SAFE_STOPPED") {
+          _playAudioFile("Now Safe.mp3");
           Future.delayed(const Duration(milliseconds: 1600), () {
-            if (_lastVerdict == "WARNING") {
-              _tts.speak("Please wait. Vehicle detected.");
+            if (_lastVerdict == "SAFE_STOPPED") {
+              _tts.speak("You may walk now. Road is safe.");
             }
           });
-        } else if (verdict == "CAUTION") {
-          _playAudioFile("Not Safe.mp3");
+        } else if (verdict == "SAFE_NO_VEHICLES") {
+          _playAudioFile("Now Safe.mp3");
           Future.delayed(const Duration(milliseconds: 1600), () {
-            if (_lastVerdict == "CAUTION") {
-              _tts.speak("Please be careful.");
+            if (_lastVerdict == "SAFE_NO_VEHICLES") {
+              _tts.speak("Safe to cross.");
             }
           });
         }

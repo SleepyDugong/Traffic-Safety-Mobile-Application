@@ -13,46 +13,36 @@ class SafetyEngine with ChangeNotifier {
     notifyListeners();
   }
 
-  /// Evaluates safety and returns a verdict: DANGER, WARNING, CAUTION, or SAFE.
+  /// Evaluates safety and returns a verdict: NOT_SAFE, SAFE_STOPPED, or SAFE_NO_VEHICLES.
   String evaluateSafety(List<DetectedObject> detections) {
-    if (detections.isEmpty) {
-      _currentVerdict = "SAFE";
+    // Filter to targets that are vehicles (Car, Bus, Truck, Motorcycle, Bicycle)
+    // COCO vehicle classes: car, bus, truck, motorcycle, bicycle, bike
+    final vehicles = detections.where((d) {
+      final label = d.label.toLowerCase();
+      return label == 'car' ||
+             label == 'bus' ||
+             label == 'truck' ||
+             label == 'motorcycle' ||
+             label == 'bicycle' ||
+             label == 'bike';
+    }).toList();
+
+    if (vehicles.isEmpty) {
+      _currentVerdict = "SAFE_NO_VEHICLES";
       notifyListeners();
       return _currentVerdict;
     }
 
-    String verdict = "SAFE";
+    // Rule 1: If any vehicle is approaching -> NOT_SAFE
+    final hasApproaching = vehicles.any((v) => v.isApproaching);
 
-    for (var detection in detections) {
-      final normLabel = detection.label.toLowerCase();
-      // Skip non-vehicle detections (like other pedestrians/persons)
-      if (normLabel == 'pedestrian' || normLabel == 'person') {
-        continue;
-      }
-
-      final category = detection.distanceCategory;
-      final isApproaching = detection.isApproaching;
-
-      // Evaluate safety rules:
-      if (category == DistanceCategory.VERY_CLOSE && isApproaching) {
-        // Rule 1: Very Close + Approaching = DANGER
-        verdict = "DANGER";
-        break; // DANGER is the highest severity, stop checks
-      } else if (category == DistanceCategory.CLOSE && isApproaching) {
-        // Rule 2: Close + Approaching = WARNING
-        if (verdict != "DANGER") {
-          verdict = "WARNING";
-        }
-      } else if (category == DistanceCategory.MEDIUM && isApproaching) {
-        // Rule 3: Medium + Approaching = CAUTION
-        if (verdict != "DANGER" && verdict != "WARNING") {
-          verdict = "CAUTION";
-        }
-      }
-      // Rule 4: Far + Moving Away = SAFE (leaves status as SAFE unless other checks apply)
+    if (hasApproaching) {
+      _currentVerdict = "NOT_SAFE";
+    } else {
+      // Rule 2: If all vehicles are stopped (or receding, meaning none are approaching) -> SAFE_STOPPED
+      _currentVerdict = "SAFE_STOPPED";
     }
 
-    _currentVerdict = verdict;
     notifyListeners();
     return _currentVerdict;
   }
