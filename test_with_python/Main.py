@@ -243,27 +243,18 @@ def main():
                 alert_level = "safe"
             box_color = (0, 255, 0)  # Always Green (BGR)
 
-            # Draw bounding box
-            cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), box_color, 2)
-            
-            # Draw corner brackets for high-tech HUD look
-            bracket_len = int((bbox[2] - bbox[0]) * 0.15)
-            # Top Left
-            cv2.line(frame, (bbox[0], bbox[1]), (bbox[0] + bracket_len, bbox[1]), box_color, 5)
-            cv2.line(frame, (bbox[0], bbox[1]), (bbox[0], bbox[1] + bracket_len), box_color, 5)
-            # Top Right
-            cv2.line(frame, (bbox[2], bbox[1]), (bbox[2] - bracket_len, bbox[1]), box_color, 5)
-            cv2.line(frame, (bbox[2], bbox[1]), (bbox[2], bbox[1] + bracket_len), box_color, 5)
-            # Bottom Left
-            cv2.line(frame, (bbox[0], bbox[3]), (bbox[0] + bracket_len, bbox[3]), box_color, 5)
-            cv2.line(frame, (bbox[0], bbox[3]), (bbox[0], bbox[3] - bracket_len), box_color, 5)
-            # Bottom Right
-            cv2.line(frame, (bbox[2], bbox[3]), (bbox[2] - bracket_len, bbox[3]), box_color, 5)
-            cv2.line(frame, (bbox[2], bbox[3]), (bbox[2], bbox[3] - bracket_len), box_color, 5)
+            # Draw bounding box (thickness 3 like MediaPipe style)
+            cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), box_color, 3)
 
             label_str = f"{label.upper()} {int(conf * 100)}% | Distance: {dist:.0f} m | Status: {alert_level.upper()}"
-            cv2.putText(frame, label_str, (bbox[0] + 5, bbox[1] - 10 if bbox[1] - 10 > 20 else bbox[1] + 20), 
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+            # Draw simple black background rectangle behind the text for readability
+            text_size = cv2.getTextSize(label_str, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)[0]
+            text_x = bbox[0]
+            text_y = bbox[1] - 10 if bbox[1] - 10 > 20 else bbox[1] + 20
+            cv2.rectangle(frame, (text_x, text_y - text_size[1] - 4), (text_x + text_size[0] + 4, text_y + 4), (0, 0, 0), -1)
+            # Draw green text
+            cv2.putText(frame, label_str, (text_x + 2, text_y), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
 
             # Build formatted JSON target object printout
             target_info = {
@@ -388,27 +379,18 @@ def main():
               alert_level = "safe"
           box_color = (0, 255, 0)  # Always Green (BGR)
 
-          # Draw neon bounding box
-          cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), box_color, 2)
-          
-          # Draw corner brackets for high-tech HUD look
-          bracket_len = int((bbox[2] - bbox[0]) * 0.15)
-          # Top Left
-          cv2.line(frame, (bbox[0], bbox[1]), (bbox[0] + bracket_len, bbox[1]), box_color, 5)
-          cv2.line(frame, (bbox[0], bbox[1]), (bbox[0], bbox[1] + bracket_len), box_color, 5)
-          # Top Right
-          cv2.line(frame, (bbox[2], bbox[1]), (bbox[2] - bracket_len, bbox[1]), box_color, 5)
-          cv2.line(frame, (bbox[2], bbox[1]), (bbox[2], bbox[1] + bracket_len), box_color, 5)
-          # Bottom Left
-          cv2.line(frame, (bbox[0], bbox[3]), (bbox[0] + bracket_len, bbox[3]), box_color, 5)
-          cv2.line(frame, (bbox[0], bbox[3]), (bbox[0], bbox[3] - bracket_len), box_color, 5)
-          # Bottom Right
-          cv2.line(frame, (bbox[2], bbox[3]), (bbox[2] - bracket_len, bbox[3]), box_color, 5)
-          cv2.line(frame, (bbox[2], bbox[3]), (bbox[2], bbox[3] - bracket_len), box_color, 5)
+          # Draw bounding box (thickness 3 like MediaPipe style)
+          cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), box_color, 3)
 
           label_str = f"{label.upper()} {int(conf * 100)}% | Distance: {dist:.0f} m | Status: {alert_level.upper()}"
-          cv2.putText(frame, label_str, (bbox[0] + 5, bbox[1] - 10 if bbox[1] - 10 > 20 else bbox[1] + 20), 
-                      cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+          # Draw simple black background rectangle behind the text for readability
+          text_size = cv2.getTextSize(label_str, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)[0]
+          text_x = bbox[0]
+          text_y = bbox[1] - 10 if bbox[1] - 10 > 20 else bbox[1] + 20
+          cv2.rectangle(frame, (text_x, text_y - text_size[1] - 4), (text_x + text_size[0] + 4, text_y + 4), (0, 0, 0), -1)
+          # Draw green text
+          cv2.putText(frame, label_str, (text_x + 2, text_y), 
+                      cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
 
           # Build formatted JSON target object printout
           target_info = {

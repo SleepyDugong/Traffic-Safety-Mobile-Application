@@ -34,72 +34,55 @@ class _DetectionPainter extends CustomPainter {
         detection.boundingBox.height * size.height,
       );
 
-      Color boxColor = const Color(0xFF30D158); // Green
-      Color bracketColor = const Color(0xFF34C759); // Neon Green
-
-      // Neon paint for bounding boxes
-      final boxPaint = Paint()
-        ..color = boxColor
-        ..style = PaintingStyle.stroke
+      // Neon green paint for sharp bounding boxes (MediaPipe style)
+      final paint = Paint()
+        ..color = const Color(0xFF30D158)
         ..strokeWidth = 3.0
-        ..strokeCap = StrokeCap.round;
+        ..style = PaintingStyle.stroke;
 
-      // Draw bounding box
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(rect, const Radius.circular(8)),
-        boxPaint,
-      );
+      // Draw sharp square box
+      canvas.drawRect(rect, paint);
 
-      // Draw corner brackets for high-tech HUD look
-      final bracketPaint = Paint()
-        ..color = bracketColor
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 5.0;
-
-      final double bracketLength = (rect.width * 0.2).clamp(10.0, 30.0);
-
-      // Top Left Corner
-      canvas.drawLine(rect.topLeft, rect.topLeft + Offset(bracketLength, 0), bracketPaint);
-      canvas.drawLine(rect.topLeft, rect.topLeft + Offset(0, bracketLength), bracketPaint);
-      
-      // Top Right Corner
-      canvas.drawLine(rect.topRight, rect.topRight + Offset(-bracketLength, 0), bracketPaint);
-      canvas.drawLine(rect.topRight, rect.topRight + Offset(0, bracketLength), bracketPaint);
-      
-      // Bottom Left Corner
-      canvas.drawLine(rect.bottomLeft, rect.bottomLeft + Offset(bracketLength, 0), bracketPaint);
-      canvas.drawLine(rect.bottomLeft, rect.bottomLeft + Offset(0, -bracketLength), bracketPaint);
-      
-      // Bottom Right Corner
-      canvas.drawLine(rect.bottomRight, rect.bottomRight + Offset(-bracketLength, 0), bracketPaint);
-      canvas.drawLine(rect.bottomRight, rect.bottomRight + Offset(0, -bracketLength), bracketPaint);
-
-      // Label text configuration
+      // Configure text span
       final textSpan = TextSpan(
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 12.0,
+        text: " ${detection.label.toUpperCase()} ${(detection.confidence * 100).toStringAsFixed(0)}% • ${detection.estimatedDistance.toStringAsFixed(1)}m ${detection.isApproaching ? '▲' : '▼'} ",
+        style: const TextStyle(
+          color: Color(0xFF30D158),
+          fontSize: 14,
           fontWeight: FontWeight.bold,
-          backgroundColor: boxColor.withOpacity(0.85),
         ),
-        text: " ${detection.label.toUpperCase()} ${(detection.confidence * 100).toInt()}% • ${detection.estimatedDistance.toStringAsFixed(1)}m ${detection.isApproaching ? '▲' : '▼'} ",
       );
 
       final textPainter = TextPainter(
         text: textSpan,
         textDirection: TextDirection.ltr,
       );
+
       textPainter.layout();
 
-      // Position the label slightly above the bounding box, or inside if too close to the top
+      // Position the label container above the top boundary of the box
       double labelY = rect.top - textPainter.height - 4;
       if (labelY < 0) {
         labelY = rect.top + 4;
       }
-      
+
+      // Draw solid black background rectangle for high contrast/readability
+      final bgRect = Rect.fromLTWH(
+        rect.left,
+        labelY - 2,
+        textPainter.width,
+        textPainter.height + 4,
+      );
+      final bgPaint = Paint()
+        ..color = Colors.black
+        ..style = PaintingStyle.fill;
+
+      canvas.drawRect(bgRect, bgPaint);
+
+      // Draw text label over the black background
       textPainter.paint(
         canvas,
-        Offset(rect.left + 4, labelY),
+        Offset(rect.left, labelY),
       );
     }
   }
